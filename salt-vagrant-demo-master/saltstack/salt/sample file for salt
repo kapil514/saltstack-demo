@@ -1,0 +1,195 @@
+#sample file for salt
+
+Version1
+
+apache_install:
+  pkg.installed:
+   {% if salt.grains.get('os_family') == 'Debian' %}
+    - name: apache2
+   {% elif salt.grains.get('os_family') == 'Redhat' %}
+    - name: httpd
+   {% endif %}
+
+service_apache:
+  service.running:
+   {% if salt.grains.get('os_family') == 'Debian' %}
+    - name: apache2
+   {% elif salt.grains.get('os_family') == 'Redhat' %}
+    - name: httpd
+   {% endif %}
+   #Explicitly enable the service to manage Redhat as well
+    - enable: True
+
+welcome_page:
+  file.managed:
+    - name: /var/www/html/index.html
+    - contents: |
+        <!doctype html>
+        <body>
+        <h1> Hello, World?</h1>
+        </body>
+
+#####
+version 2
+
+
+{% set lookup ={
+     'Debian':{
+        'pkg': 'apache2',
+        'srv':'apache2',
+     },
+     'RedHat':{
+        'pkg': 'httpd',
+        'srv': 'httpd',
+     },
+}%}
+
+{% set apache = lookup[salt.grains.get('os_family')]%}
+apache_install:
+  pkg.installed:
+    - name: {{apache.pkg}}
+   
+
+service_apache:
+  service.running:
+    - name: {{apache.pkg}}
+   #Explicitly enable the service to manage Redhat as well
+    - enable: True
+
+welcome_page:
+  file.managed:
+    - name: /var/www/html/index.html
+    - contents: |
+        <!doctype html>
+        <body>
+        <h1> Hello, World?</h1>
+        </body>
+
+
+
+######
+Version 3
+#
+#
+#Using filter_by function instead of manually doing by grains items
+
+{% set lookup ={
+     'Debian':{
+        'pkg': 'apache2',
+        'srv':'apache2',
+     },
+     'RedHat':{
+        'pkg': 'httpd',
+        'srv': 'httpd',
+     },
+}%}
+
+{% set apache = salt.grains.filter_by(lookup) %}
+
+apache_install:
+  pkg.installed:
+    - name: {{apache.pkg}}
+   
+
+service_apache:
+  service.running:
+    - name: {{apache.pkg}}
+   #Explicitly enable the service to manage Redhat as well
+    - enable: True
+
+welcome_page:
+  file.managed:
+    - name: /var/www/html/index.html
+    - contents: |
+        <!doctype html>
+        <body>
+        <h1> Hello, World?</h1>
+        </body>
+
+
+Version 4
+##########
+
+#instead of using extra variable directly put in the mapping.
+
+{% set apache = salt.grains.filter_by({
+     'Debian':{
+        'pkg': 'apache2',
+        'srv':'apache2',
+     },
+     'RedHat':{
+        'pkg': 'httpd',
+        'srv': 'httpd',
+     },
+})%}
+
+
+apache_install:
+  pkg.installed:
+    - name: {{apache.pkg}}
+   
+
+service_apache:
+  service.running:
+    - name: {{apache.pkg}}
+   #Explicitly enable the service to manage Redhat as well
+    - enable: True
+
+welcome_page:
+  file.managed:
+    - name: /var/www/html/index.html
+    - contents: |
+        <!doctype html>
+        <body>
+        <h1> Hello, World?</h1>
+        </body>
+
+
+##########
+
+Pillar example version 1
+
+{# {% if grains.id == 'minion1' %} }#
+{# name: minion1 world #}
+{# {% elif grains.id == 'minion2' %}#}
+{# name: minon2 world #}
+{# {% endif %} #}
+
+
+
+###################
+
+
+forcing the order of execution
+
+#Mapping Example
+#
+{% from "apache/map.sls" import apache with context %}
+
+
+apache_install:
+  pkg.installed:
+    - name: {{apache.pkg}}
+
+service_apache:
+  service.running:
+    - name: {{apache.pkg}}
+   #Explicitly enable the service to manage Redhat as well
+    - enable: True
+    - require:
+      - pkg: apache_install
+
+
+
+
+
+#########################
+
+
+
+
+
+
+
+
+
